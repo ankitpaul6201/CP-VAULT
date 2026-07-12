@@ -1,0 +1,57 @@
+{
+  "manifest_version": 3,
+  "name": "CP Vault",
+  "version": "1.0.0",
+  "description": "Automatically sync accepted coding solutions to GitHub with beautiful documentation",
+  "permissions": [
+    "storage",
+    "notifications",
+    "identity",
+    "scripting",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://*.leetcode.com/*",
+    "https://*.codeforces.com/*",
+    "https://*.codechef.com/*",
+    "https://*.hackerrank.com/*",
+    "https://github.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "32": "assets/icon32.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  "options_page": "settings.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.leetcode.com/*",
+        "https://*.codeforces.com/*",
+        "https://*.codechef.com/*",
+        "https://*.hackerrank.com/*",
+        "https://github.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["interceptor.js"],
+      "matches": [
+        "https://*.leetcode.com/*",
+        "https://*.codechef.com/*",
+        "https://*.hackerrank.com/*"
+      ]
+    }
+  ]
+}

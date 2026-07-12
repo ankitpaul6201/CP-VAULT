@@ -1,0 +1,32 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background: rounded square (vault body) -->
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#bg)"/>
+
+  <!-- Vault door ring -->
+  <circle cx="128" cy="128" r="76" fill="none" stroke="url(#accent)" stroke-width="6" opacity="0.9"/>
+
+  <!-- Sync arrows around the ring -->
+  <path d="M 128 52 A 76 76 0 0 1 199 100" fill="none" stroke="url(#accent)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 199 100 L 205 82 L 182 88 Z" fill="url(#accent)"/>
+
+  <path d="M 128 204 A 76 76 0 0 1 57 156" fill="none" stroke="url(#accent)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 57 156 L 51 174 L 74 168 Z" fill="url(#accent)"/>
+
+  <!-- Code brackets forming the "lock" keyhole, minimal -->
+  <path d="M 110 100 L 84 128 L 110 156" fill="none" stroke="#F8FAFC" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 146 100 L 172 128 L 146 156" fill="none" stroke="#F8FAFC" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Center dot: the "vaulted" solution -->
+  <circle cx="128" cy="128" r="7" fill="#F8FAFC"/>
+</svg>

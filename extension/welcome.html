@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to CP Vault</title>
+    <link rel="icon" type="image/png" href="/src/assets/favicon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        var hours = new Date().getHours();
+        var isDay = hours >= 5 && hours < 19;
+        if (isDay) {
+          document.documentElement.classList.add('light');
+          document.documentElement.classList.remove('dark');
+          var style = document.createElement('style');
+          style.innerHTML = 'html, body { background-color: #d7dfd1 !important; }';
+          document.head.appendChild(style);
+        } else {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+          var style = document.createElement('style');
+          style.innerHTML = 'html, body { background-color: #030712 !important; }';
+          document.head.appendChild(style);
+        }
+      })();
+    </script>
+  </head>
+  <body class="antialiased overflow-x-hidden" style="font-family: 'Poppins', sans-serif;">
+    <div id="root"></div>
+    <script type="module" src="/src/welcome/main.tsx"></script>
+  </body>
+</html>
