@@ -552,10 +552,9 @@ CP Vault is built on the shoulders of giants:
 
 If CP Vault saves you time and helps you build a great portfolio, consider supporting its development:
 
-[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-ff5e5b?style=for-the-badge&logo=ko-fi)](https://ko-fi.com/ankitpaul6201)
-[![PayPal](https://img.shields.io/badge/PayPal-Donate-00457C?style=for-the-badge&logo=paypal)](https://paypal.me/ankitpaul6201)
 
-> **UPI**: `ankitpaul6201@upi` *(for Indian supporters)*
+
+> **UPI**: `ankitpaul@ptyes`
 
 </div>
 
