@@ -1,0 +1,79 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for CP Vault
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+assignees: ["ankitpaul6201"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please describe your idea as clearly as possible.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      options:
+        - label: I have searched existing issues and this is not a duplicate
+          required: true
+        - label: I have checked the ROADMAP.md and this is not already planned
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      options:
+        - New Platform Adapter
+        - GitHub Integration
+        - UI / UX Improvement
+        - Settings / Configuration
+        - Performance
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? What is the current limitation?
+      placeholder: "Currently, CP Vault doesn't support AtCoder. I solve problems there regularly and..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How would you like this feature to work?
+      placeholder: "Add an AtCoder adapter that detects the accepted verdict by checking the result table DOM..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative approaches or workarounds you've tried?
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (from your perspective)
+      options:
+        - Critical — Blocking my workflow
+        - High — Would use daily
+        - Medium — Nice to have
+        - Low — Minor improvement
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to implement this feature and submit a Pull Request

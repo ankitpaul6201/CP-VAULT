@@ -1,0 +1,27 @@
+name: Question / Help
+description: Ask a question about using or contributing to CP Vault
+title: "[Question]: "
+labels: ["question"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before asking, please check:
+        - [FAQ](https://github.com/ankitpaul6201/CP-VAULT/blob/main/FAQ.md)
+        - [INSTALLATION.md](https://github.com/ankitpaul6201/CP-VAULT/blob/main/INSTALLATION.md)
+        - [Existing issues](https://github.com/ankitpaul6201/CP-VAULT/issues)
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What do you need help with?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Any relevant context (what you've tried, your setup, etc.)

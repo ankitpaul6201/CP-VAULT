@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Install Dependencies
+        run: |
+          cd extension
+          npm ci
+
+      - name: Build Extension
+        run: |
+          cd extension
+          npm run build
+
+      - name: Get Version from Tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Package Extension as ZIP
+        run: |
+          cd extension/dist
+          zip -r ../../CP-Vault-v${{ steps.version.outputs.VERSION }}.zip .
+          cd ../..
+
+      - name: Generate Checksums
+        run: |
+          sha256sum CP-Vault-v${{ steps.version.outputs.VERSION }}.zip > CP-Vault-v${{ steps.version.outputs.VERSION }}.zip.sha256
+          echo "SHA256 checksum:"
+          cat CP-Vault-v${{ steps.version.outputs.VERSION }}.zip.sha256
+
+      - name: Extract Release Notes from CHANGELOG
+        id: changelog
+        run: |
+          # Extract the section for this version from CHANGELOG.md
+          VERSION="v${{ steps.version.outputs.VERSION }}"
+          NOTES=$(awk "/^## \[${{ steps.version.outputs.VERSION }}\]/,/^## \[/" CHANGELOG.md | head -n -1)
+          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: CP Vault ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.NOTES }}
+          draft: false
+          prerelease: false
+          files: |
+            CP-Vault-v${{ steps.version.outputs.VERSION }}.zip
+            CP-Vault-v${{ steps.version.outputs.VERSION }}.zip.sha256
