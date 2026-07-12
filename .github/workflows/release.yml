@@ -156,16 +156,24 @@ jobs:
           name: extension-build
           path: extension/dist/
 
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Packaging Dependencies
-        run: npm install --prefix scripts-runner archiver 2>/dev/null || npm install archiver
-
       - name: Package Extension ZIP
-        run: node scripts/package-extension.js "${{ steps.get-version.outputs.version }}"
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          ZIP_NAME="CP-Vault-${VERSION}.zip"
+
+          echo "Packaging extension from extension/dist/ ..."
+          cd extension/dist
+
+          # Create ZIP of all dist files, excluding source maps
+          zip -r "../../${ZIP_NAME}" . \
+            --exclude "*.map" \
+            --exclude ".DS_Store" \
+            --exclude "Thumbs.db"
+
+          cd ../..
+          echo "Created: ${ZIP_NAME} ($(du -sh ${ZIP_NAME} | cut -f1))"
+          echo "Contents:"
+          unzip -l "${ZIP_NAME}"
 
       - name: Generate SHA256 Checksum
         run: |
@@ -174,13 +182,6 @@ jobs:
           echo "Checksum:"
           cat "${ZIP_NAME}.sha256"
 
-      - name: Verify ZIP Contents
-        run: |
-          ZIP_NAME="CP-Vault-${{ steps.get-version.outputs.version }}.zip"
-          echo "ZIP Contents:"
-          unzip -l "${ZIP_NAME}"
-          echo ""
-          echo "ZIP Size: $(du -sh ${ZIP_NAME} | cut -f1)"
 
       - name: Generate Source Code Archive
         run: |
