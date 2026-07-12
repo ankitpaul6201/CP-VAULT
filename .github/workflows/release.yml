@@ -182,6 +182,16 @@ jobs:
           echo ""
           echo "ZIP Size: $(du -sh ${ZIP_NAME} | cut -f1)"
 
+      - name: Generate Source Code Archive
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          SOURCE_NAME="CP-Vault-${VERSION}-source.zip"
+          # git archive creates a clean ZIP of tracked files only
+          # (no node_modules, .env, .git, build cache)
+          git archive --format=zip --prefix="CP-Vault-${VERSION}/" HEAD -o "${SOURCE_NAME}"
+          sha256sum "${SOURCE_NAME}" > "${SOURCE_NAME}.sha256"
+          echo "Source archive: $(du -sh ${SOURCE_NAME} | cut -f1)"
+
       - name: Upload Package Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -189,6 +199,8 @@ jobs:
           path: |
             CP-Vault-${{ steps.get-version.outputs.version }}.zip
             CP-Vault-${{ steps.get-version.outputs.version }}.zip.sha256
+            CP-Vault-${{ steps.get-version.outputs.version }}-source.zip
+            CP-Vault-${{ steps.get-version.outputs.version }}-source.zip.sha256
           retention-days: 7
 
   # ─────────────────────────────────────────────────────────
@@ -361,6 +373,8 @@ jobs:
           files: |
             CP-Vault-${{ needs.package.outputs.version }}.zip
             CP-Vault-${{ needs.package.outputs.version }}.zip.sha256
+            CP-Vault-${{ needs.package.outputs.version }}-source.zip
+            CP-Vault-${{ needs.package.outputs.version }}-source.zip.sha256
           generate_release_notes: false
           make_latest: ${{ needs.package.outputs.is-prerelease == 'false' }}
 
