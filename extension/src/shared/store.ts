@@ -147,6 +147,21 @@ export const useAppStore = create<AppState>((set, get) => {
       try {
         const repos = await GitHubService.listRepositories(state.settings.githubToken);
         set({ repositories: repos, isLoading: false });
+
+        // Auto-disconnect if target repo is deleted or renamed on GitHub
+        const { repoName, repoOwner, githubToken } = state.settings || {};
+        if (repoName && repoOwner && githubToken) {
+          const inList = repos.some(r => r.name.toLowerCase() === repoName.toLowerCase());
+          if (!inList) {
+            const stillExists = await GitHubService.checkRepositoryExists(githubToken, repoOwner, repoName);
+            if (!stillExists) {
+              await get().updateSettings({
+                repoOwner: null,
+                repoName: null,
+              });
+            }
+          }
+        }
       } catch (err) {
         set({ error: 'Failed to fetch repositories from GitHub', isLoading: false });
       }

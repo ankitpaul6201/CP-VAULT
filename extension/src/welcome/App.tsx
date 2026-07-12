@@ -238,10 +238,14 @@ export default function App() {
   const pad = (num: number) => String(num).padStart(2, '0');
   const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
-  // Determine Time of Day State (Sun rises at 5 AM, sets at 7 PM)
+  // Determine Time of Day State
+  // Sunrise (5 AM to 8 AM): sunset dark/rose theme
+  // Midday (8 AM to 5 PM): light sage theme
+  // Sunset (5 PM to 7 PM): sunset dark/orange theme
+  // Night (7 PM to 5 AM): night dark/sky theme
+  const useLightTheme = hours >= 8 && hours < 17;
+  const isNightTheme = !useLightTheme;
   const isDay = hours >= 5 && hours < 19;
-  const isNightTheme = !isDay;
-  const useLightTheme = isDay;
   
   // Calculate Progress (0 to 1) for Sun or Moon position
   let progress = 0;
@@ -325,45 +329,81 @@ export default function App() {
   
   const primaryButtonClass = useLightTheme 
     ? 'bg-[#2d4d30] text-white hover:bg-[#1d331f] shadow-lg shadow-[#2d4d30]/20' 
+    : activeLogoTheme === 'sunrise'
+    ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-xl shadow-rose-500/20'
+    : activeLogoTheme === 'sunset'
+    ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-xl shadow-orange-500/20'
     : 'bg-white text-[#030e21] hover:bg-sky-100 shadow-xl shadow-white/5';
     
   const secondaryButtonClass = useLightTheme 
     ? 'border-[#2d4d30] text-[#2d4d30] hover:bg-[#2d4d30]/5' 
+    : activeLogoTheme === 'sunrise'
+    ? 'border-rose-500/30 text-rose-300 hover:bg-rose-500/5'
+    : activeLogoTheme === 'sunset'
+    ? 'border-orange-500/30 text-orange-300 hover:bg-orange-500/5'
     : 'border-slate-400 text-white hover:bg-white/5';
 
   const navToggleClass = useLightTheme
     ? 'bg-white/70 border-[#ccd4c3] text-[#2d4d30] hover:text-[#1d331f]'
+    : activeLogoTheme === 'sunrise'
+    ? 'bg-rose-950/20 border border-rose-900/30 text-rose-300 hover:text-rose-450'
+    : activeLogoTheme === 'sunset'
+    ? 'bg-orange-950/20 border border-orange-900/30 text-orange-300 hover:text-orange-450'
     : 'bg-slate-900/60 border border-slate-800 hover:text-sky-400';
 
   const clockWidgetClass = useLightTheme
     ? 'bg-white/80 border-[#b7c7b2] text-[#1d331f] shadow-lg shadow-[#1d331f]/5'
+    : activeLogoTheme === 'sunrise'
+    ? 'bg-rose-955/20 border border-rose-900/40 text-slate-100 shadow-2xl'
+    : activeLogoTheme === 'sunset'
+    ? 'bg-orange-955/20 border border-orange-900/40 text-slate-100 shadow-2xl'
     : 'bg-black/90 border-slate-800/60 text-slate-100 shadow-2xl';
 
   const clockDigitsClass = useLightTheme
     ? 'text-[#2d4d30]'
-    : activeLogoTheme === 'sunrise' ? 'text-rose-400' :
+    : activeLogoTheme === 'sunrise' ? 'text-rose-450' :
       activeLogoTheme === 'midday' ? 'text-sky-400' :
-      activeLogoTheme === 'sunset' ? 'text-pink-400' :
+      activeLogoTheme === 'sunset' ? 'text-orange-450' :
       'text-emerald-400';
 
   const inputClass = useLightTheme 
     ? 'bg-white/80 border-[#ccd4c3] text-[#1d331f] focus:border-[#2d4d30] focus:ring-[#2d4d30]' 
+    : activeLogoTheme === 'sunrise'
+    ? 'bg-rose-950/10 border-rose-900/30 text-white focus:border-rose-500 focus:ring-rose-500'
+    : activeLogoTheme === 'sunset'
+    ? 'bg-orange-950/10 border-orange-900/30 text-white focus:border-orange-500 focus:ring-orange-500'
     : 'bg-slate-900/60 border-slate-800 text-white focus:border-sky-500 focus:ring-sky-500';
 
   const activeTabClass = useLightTheme 
     ? 'bg-[#2d4d30]/10 border-[#2d4d30]/20 text-[#1d331f]' 
+    : activeLogoTheme === 'sunrise'
+    ? 'bg-rose-600/10 border-rose-500/20 text-rose-400'
+    : activeLogoTheme === 'sunset'
+    ? 'bg-orange-600/10 border-orange-500/20 text-orange-400'
     : 'bg-sky-600/10 border-sky-500/20 text-sky-400';
 
   const inactiveTabClass = useLightTheme 
     ? 'text-[#3d5438] hover:bg-[#2d4d30]/5 hover:text-[#1d331f] border-transparent' 
+    : activeLogoTheme === 'sunrise'
+    ? 'text-rose-300/70 hover:bg-rose-950/20 hover:text-rose-300 border-transparent'
+    : activeLogoTheme === 'sunset'
+    ? 'text-orange-300/70 hover:bg-orange-950/20 hover:text-orange-300 border-transparent'
     : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200 border-transparent';
 
   const primaryBtnClass = useLightTheme 
     ? 'bg-[#2d4d30] hover:bg-[#1d331f] text-white shadow-lg shadow-[#2d4d30]/20' 
+    : activeLogoTheme === 'sunrise'
+    ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/25'
+    : activeLogoTheme === 'sunset'
+    ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25'
     : 'bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-500/20';
 
   const secondaryBtnClass = useLightTheme 
     ? 'border-[#ccd4c3] bg-white/40 hover:bg-[#2d4d30]/5 text-[#2d4d30]' 
+    : activeLogoTheme === 'sunrise'
+    ? 'border-rose-900/30 bg-rose-950/20 hover:bg-rose-900/25 text-rose-300'
+    : activeLogoTheme === 'sunset'
+    ? 'border-orange-900/30 bg-orange-950/20 hover:bg-orange-900/25 text-orange-300'
     : 'border-slate-850 bg-slate-900/40 hover:bg-slate-850 text-slate-300';
 
   if (!settings) {

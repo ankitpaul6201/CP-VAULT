@@ -69,6 +69,18 @@ export const GitHubService = {
     };
   },
 
+  async checkRepositoryExists(token: string, owner: string, repo: string): Promise<boolean> {
+    const headers = await this.getHeaders(token);
+    try {
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers });
+      if (response.status === 404) return false;
+      return response.ok;
+    } catch (err) {
+      Logger.warn(`Check repository exists caught error:`, err);
+      return true; // default to true on network errors to avoid false disconnects
+    }
+  },
+
   async getFile(token: string, owner: string, repo: string, path: string, branch = 'main'): Promise<{ content: string; sha: string } | null> {
     const headers = await this.getHeaders(token);
     try {

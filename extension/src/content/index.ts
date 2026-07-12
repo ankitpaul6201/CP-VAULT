@@ -47,25 +47,36 @@ function shouldInjectInterceptor(): boolean {
   );
 }
 
-// 2. Listen to postMessage from the injected interceptor
+// 2. Listen to postMessage from the injected interceptor (API fallback for CodeChef & HackerRank)
 window.addEventListener('message', (event) => {
-  if (event.source !== window || !event.data || event.data.source !== 'cp-vault-interceptor') {
+  if (!event.data || event.data.source !== 'cp-vault-interceptor') {
     return;
   }
 
   const { url, responseText } = event.data;
   const host = window.location.hostname;
 
-  if (host.includes('leetcode.com')) {
-    LeetCodeAdapter.parse(url, responseText);
-  } else if (host.includes('codechef.com')) {
+  // LeetCode now uses DOM observer + webNavigation (not network interception)
+  if (host.includes('codechef.com')) {
     CodeChefAdapter.parse(url, responseText);
   } else if (host.includes('hackerrank.com')) {
     HackerRankAdapter.parse(url, responseText);
   }
 });
 
-// 3. Initialize Codeforces Adapter (which relies on DOM parsing and mutation observer)
+// 3. Initialize platform adapters (DOM MutationObserver-based)
 if (window.location.hostname.includes('codeforces.com')) {
   CodeforcesAdapter.initialize();
+}
+
+if (window.location.hostname.includes('leetcode.com')) {
+  LeetCodeAdapter.initialize();
+}
+
+if (window.location.hostname.includes('codechef.com')) {
+  CodeChefAdapter.initialize();
+}
+
+if (window.location.hostname.includes('hackerrank.com')) {
+  HackerRankAdapter.initialize();
 }

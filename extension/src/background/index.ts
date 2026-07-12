@@ -26,6 +26,22 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true; // Keep channel open for async response
   }
 
+  // LeetHub-style: Watch for URL change to /submissions/<id>/ after a submit click
+  if (message.action === 'LEETCODE_SUBMISSION') {
+    const listener = (details: chrome.webNavigation.WebNavigationTransitionCallbackDetails) => {
+      const match = details.url.match(/\/submissions\/(\d+)\//);
+      if (match) {
+        const submissionId = match[1];
+        sendResponse({ submissionId });
+        chrome.webNavigation.onHistoryStateUpdated.removeListener(listener);
+      }
+    };
+    chrome.webNavigation.onHistoryStateUpdated.addListener(listener, {
+      url: [{ hostContains: 'leetcode.com', pathContains: 'submissions' }],
+    });
+    return true; // Keep channel open
+  }
+
   if (message.action === 'START_OAUTH') {
     const { clientId, clientSecret, proxyUrl } = message;
     const redirectUri = 'https://github.com/';

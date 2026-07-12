@@ -4,7 +4,7 @@ export const NotificationService = {
     if (chrome.notifications) {
       chrome.notifications.create(notificationId, {
         type: 'basic',
-        iconUrl: chrome.runtime.getURL('src/assets/icon128.png'),
+        iconUrl: chrome.runtime.getURL('assets/icon128.png'),
         title,
         message,
         priority: 1

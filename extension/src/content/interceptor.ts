@@ -33,8 +33,18 @@
     const clone = response.clone();
     
     try {
-      const url = typeof resource === 'string' ? resource : (resource as Request).url;
-      if (isTargetUrl(url)) {
+      let url = '';
+      if (typeof resource === 'string') {
+        url = resource;
+      } else if (resource instanceof URL) {
+        url = resource.toString();
+      } else if (resource && typeof resource === 'object' && 'url' in resource) {
+        url = (resource as Request).url;
+      } else if (resource) {
+        url = resource.toString();
+      }
+
+      if (url && isTargetUrl(url)) {
         clone.text().then(text => {
           dispatchPayload(url, text);
         });
