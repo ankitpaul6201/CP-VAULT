@@ -1,0 +1,16 @@
+{
+  "name": "cp-vault-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Release management scripts for CP Vault",
+  "scripts": {
+    "bump": "node scripts/bump-version.js",
+    "package": "node scripts/package-extension.js",
+    "validate": "node scripts/validate-release.js",
+    "release": "node scripts/validate-release.js && node scripts/package-extension.js"
+  },
+  "dependencies": {
+    "archiver": "^7.0.0"
+  }
+}

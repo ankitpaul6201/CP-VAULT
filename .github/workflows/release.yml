@@ -1,72 +1,378 @@
-name: Release
+name: Release Pipeline
 
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-alpha*'
+      - 'v[0-9]+.[0-9]+.[0-9]+-beta*'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc*'
 
 permissions:
   contents: write
 
 jobs:
-  build-and-release:
-    name: Build & Publish Release
+  # ─────────────────────────────────────────────────────────
+  # 1. Security Guard — never release with secrets
+  # ─────────────────────────────────────────────────────────
+  security-check:
+    name: 🔒 Pre-Release Security Scan
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for sensitive files
+        run: |
+          echo "Scanning for sensitive files..."
+          FOUND=0
+
+          # Check for .env files (excluding .env.example)
+          if find . -name ".env" -not -name ".env.example" -not -path "./.git/*" | grep -q .; then
+            echo "❌ ERROR: .env file found in repository!"
+            FOUND=1
+          fi
+
+          # Check for credentials patterns
+          if grep -r --include="*.js" --include="*.ts" --include="*.json" \
+            -E "(client_secret|api_key|apikey|private_key|oauth_secret)" \
+            --exclude-dir=node_modules --exclude-dir=.git . 2>/dev/null | \
+            grep -v ".env.example" | grep -v "GITHUB_CLIENT_SECRET" | grep -q .; then
+            echo "⚠️  WARNING: Possible credentials found — please review"
+          fi
+
+          # Ensure node_modules is not tracked
+          if git ls-files | grep -q "node_modules"; then
+            echo "❌ ERROR: node_modules tracked in git!"
+            FOUND=1
+          fi
+
+          if [ "$FOUND" -eq 1 ]; then
+            exit 1
+          fi
+
+          echo "✅ Security check passed"
+
+  # ─────────────────────────────────────────────────────────
+  # 2. Quality Gates — lint, typecheck, build
+  # ─────────────────────────────────────────────────────────
+  quality-check:
+    name: ✅ Quality Gates
+    runs-on: ubuntu-latest
+    needs: security-check
+    steps:
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: extension/package-lock.json
 
-      - name: Install Dependencies
-        run: |
-          cd extension
-          npm ci
+      - name: Install Extension Dependencies
+        run: cd extension && npm ci
 
-      - name: Build Extension
-        run: |
-          cd extension
-          npm run build
+      - name: TypeScript Type Check
+        run: cd extension && node node_modules/typescript/bin/tsc --noEmit
 
-      - name: Get Version from Tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      - name: Build Extension (Production)
+        run: cd extension && npm run build
 
-      - name: Package Extension as ZIP
+      - name: Validate Manifest
         run: |
-          cd extension/dist
-          zip -r ../../CP-Vault-v${{ steps.version.outputs.VERSION }}.zip .
-          cd ../..
+          node -e "
+          const fs = require('fs');
+          const manifest = JSON.parse(fs.readFileSync('extension/dist/manifest.json', 'utf8'));
+          if (!manifest.manifest_version) throw new Error('Missing manifest_version');
+          if (!manifest.name) throw new Error('Missing name');
+          if (!manifest.version) throw new Error('Missing version');
+          if (!manifest.background) throw new Error('Missing background');
+          console.log('✅ Manifest valid: ' + manifest.name + ' v' + manifest.version);
+          "
 
-      - name: Generate Checksums
+      - name: Validate Build Output
         run: |
-          sha256sum CP-Vault-v${{ steps.version.outputs.VERSION }}.zip > CP-Vault-v${{ steps.version.outputs.VERSION }}.zip.sha256
-          echo "SHA256 checksum:"
-          cat CP-Vault-v${{ steps.version.outputs.VERSION }}.zip.sha256
+          echo "Checking required build artifacts..."
+          REQUIRED=(
+            "extension/dist/manifest.json"
+            "extension/dist/background.js"
+            "extension/dist/content.js"
+            "extension/dist/interceptor.js"
+          )
+          for file in "${REQUIRED[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            fi
+          done
+          echo "✅ All required build artifacts present"
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-build
+          path: extension/dist/
+          retention-days: 1
+
+  # ─────────────────────────────────────────────────────────
+  # 3. Package — create clean distributable ZIP
+  # ─────────────────────────────────────────────────────────
+  package:
+    name: 📦 Package Extension
+    runs-on: ubuntu-latest
+    needs: quality-check
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      is-prerelease: ${{ steps.get-version.outputs.is-prerelease }}
+      zip-name: ${{ steps.get-version.outputs.zip-name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get Version Info
+        id: get-version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "zip-name=CP-Vault-${VERSION}.zip" >> $GITHUB_OUTPUT
+
+          # Detect pre-release
+          if echo "$TAG" | grep -qE "\-(alpha|beta|rc)"; then
+            echo "is-prerelease=true" >> $GITHUB_OUTPUT
+            echo "Pre-release detected: $TAG"
+          else
+            echo "is-prerelease=false" >> $GITHUB_OUTPUT
+            echo "Stable release: $TAG"
+          fi
+
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: extension-build
+          path: extension/dist/
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Packaging Dependencies
+        run: npm install --prefix scripts-runner archiver 2>/dev/null || npm install archiver
+
+      - name: Package Extension ZIP
+        run: node scripts/package-extension.js "${{ steps.get-version.outputs.version }}"
+
+      - name: Generate SHA256 Checksum
+        run: |
+          ZIP_NAME="CP-Vault-${{ steps.get-version.outputs.version }}.zip"
+          sha256sum "${ZIP_NAME}" > "${ZIP_NAME}.sha256"
+          echo "Checksum:"
+          cat "${ZIP_NAME}.sha256"
+
+      - name: Verify ZIP Contents
+        run: |
+          ZIP_NAME="CP-Vault-${{ steps.get-version.outputs.version }}.zip"
+          echo "ZIP Contents:"
+          unzip -l "${ZIP_NAME}"
+          echo ""
+          echo "ZIP Size: $(du -sh ${ZIP_NAME} | cut -f1)"
+
+      - name: Upload Package Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-packages
+          path: |
+            CP-Vault-${{ steps.get-version.outputs.version }}.zip
+            CP-Vault-${{ steps.get-version.outputs.version }}.zip.sha256
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────
+  # 4. Release — publish to GitHub Releases
+  # ─────────────────────────────────────────────────────────
+  release:
+    name: 🚀 Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: package
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Release Packages
+        uses: actions/download-artifact@v4
+        with:
+          name: release-packages
 
       - name: Extract Release Notes from CHANGELOG
         id: changelog
         run: |
-          # Extract the section for this version from CHANGELOG.md
-          VERSION="v${{ steps.version.outputs.VERSION }}"
-          NOTES=$(awk "/^## \[${{ steps.version.outputs.VERSION }}\]/,/^## \[/" CHANGELOG.md | head -n -1)
-          echo "NOTES<<EOF" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          VERSION="${{ needs.package.outputs.version }}"
+          # Strip leading 'v' for CHANGELOG lookup
+          CLEAN_VERSION="${VERSION#v}"
+
+          # Try to extract section from CHANGELOG.md
+          NOTES=$(awk "/^## \[?${CLEAN_VERSION}\]?|^## \[?${VERSION}\]?/,/^## \[?[0-9]/" CHANGELOG.md 2>/dev/null | \
+                  head -n -1 | tail -n +2 || echo "")
+
+          if [ -z "$NOTES" ]; then
+            NOTES="See [CHANGELOG.md](./CHANGELOG.md) for full details."
+          fi
+
+          # Write to file to avoid env var size limits
+          echo "$NOTES" > release_notes_extracted.md
+          echo "extracted=true" >> $GITHUB_OUTPUT
+
+      - name: Generate Release Body
+        run: |
+          VERSION="${{ needs.package.outputs.version }}"
+          ZIP_NAME="CP-Vault-${VERSION}.zip"
+          IS_PRERELEASE="${{ needs.package.outputs.is-prerelease }}"
+
+          # Detect release type
+          if echo "$VERSION" | grep -q "alpha"; then RELEASE_TYPE="Alpha Preview"
+          elif echo "$VERSION" | grep -q "beta"; then RELEASE_TYPE="Beta"
+          elif echo "$VERSION" | grep -q "rc"; then RELEASE_TYPE="Release Candidate"
+          else RELEASE_TYPE="Stable Release"
+          fi
+
+          cat > release_body.md << 'RELEASE_BODY_EOF'
+          <div align="center">
+          <img src="https://raw.githubusercontent.com/ankitpaul6201/CP-VAULT/main/logo.png" width="100" />
+
+          # CP Vault RELEASE_VERSION_PLACEHOLDER
+
+          **RELEASE_TYPE_PLACEHOLDER** — Automatically sync accepted competitive programming solutions to GitHub.
+
+          </div>
+
+          ---
+
+          ## 🚀 Highlights
+
+          CP Vault automatically detects when you get **Accepted** on a competitive programming platform and instantly syncs your solution to GitHub with auto-generated documentation.
+
+          RELEASE_NOTES_PLACEHOLDER
+
+          ---
+
+          ## 📦 Installation
+
+          ### Option 1 — Load Unpacked (Developer Mode)
+
+          1. **Download** `CP-Vault-VERSION_PLACEHOLDER.zip` below
+          2. **Extract** the ZIP to a folder
+          3. Open **chrome://extensions/** in your browser
+          4. Enable **Developer mode** (top right toggle)
+          5. Click **Load unpacked** → select the extracted folder
+          6. The CP Vault icon will appear in your toolbar ✅
+
+          ### Option 2 — Clone & Build
+
+          ```bash
+          git clone https://github.com/ankitpaul6201/CP-VAULT.git
+          cd CP-VAULT/extension
+          npm install
+          npm run build
+          # Load extension/dist/ as unpacked extension
+          ```
+
+          ---
+
+          ## 🌐 Browser Compatibility
+
+          | Browser | Status | Notes |
+          |---|---|---|
+          | Google Chrome | ✅ Supported | Chrome 114+ |
+          | Microsoft Edge | ✅ Supported | Edge 114+ |
+          | Brave | ✅ Supported | Chromium-based |
+          | Opera | ✅ Supported | Chromium-based |
+          | Firefox | 🔜 Planned | v2.0.0 |
+
+          ---
+
+          ## 🌍 Supported Platforms
+
+          | Platform | Status |
+          |---|---|
+          | LeetCode | ✅ |
+          | Codeforces | ✅ |
+          | CodeChef | ✅ |
+          | HackerRank | ✅ |
+          | AtCoder | 🔜 |
+
+          ---
+
+          ## 🔒 Security Verification
+
+          Verify the integrity of your download:
+
+          ```bash
+          sha256sum -c CP-Vault-VERSION_PLACEHOLDER.zip.sha256
+          ```
+
+          ---
+
+          ## 📜 License
+
+          [MIT License](https://github.com/ankitpaul6201/CP-VAULT/blob/main/LICENSE) © 2024 Ankit Paul
+
+          ---
+
+          ## 🙏 Contributors
+
+          Thank you to everyone who contributed to this release!
+
+          **Full Changelog**: https://github.com/ankitpaul6201/CP-VAULT/blob/main/CHANGELOG.md
+          RELEASE_BODY_EOF
+
+          # Replace placeholders
+          EXTRACTED_NOTES=$(cat release_notes_extracted.md)
+          sed -i "s/RELEASE_VERSION_PLACEHOLDER/${VERSION}/g" release_body.md
+          sed -i "s/RELEASE_TYPE_PLACEHOLDER/${RELEASE_TYPE}/g" release_body.md
+          sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" release_body.md
+
+          # Insert extracted changelog notes
+          python3 -c "
+          import sys
+          with open('release_body.md', 'r') as f:
+              content = f.read()
+          with open('release_notes_extracted.md', 'r') as f:
+              notes = f.read().strip()
+          content = content.replace('RELEASE_NOTES_PLACEHOLDER', notes if notes else '')
+          with open('release_body.md', 'w') as f:
+              f.write(content)
+          "
+
+          echo "Release body generated successfully"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: CP Vault ${{ github.ref_name }}
-          body: ${{ steps.changelog.outputs.NOTES }}
+          name: "CP Vault ${{ needs.package.outputs.version }}"
+          body_path: release_body.md
           draft: false
-          prerelease: false
+          prerelease: ${{ needs.package.outputs.is-prerelease }}
           files: |
-            CP-Vault-v${{ steps.version.outputs.VERSION }}.zip
-            CP-Vault-v${{ steps.version.outputs.VERSION }}.zip.sha256
+            CP-Vault-${{ needs.package.outputs.version }}.zip
+            CP-Vault-${{ needs.package.outputs.version }}.zip.sha256
+          generate_release_notes: false
+          make_latest: ${{ needs.package.outputs.is-prerelease == 'false' }}
+
+      - name: Release Summary
+        run: |
+          VERSION="${{ needs.package.outputs.version }}"
+          ZIP_NAME="CP-Vault-${VERSION}.zip"
+          echo ""
+          echo "═══════════════════════════════════════"
+          echo "  ✅ CP Vault ${VERSION} Released!"
+          echo "═══════════════════════════════════════"
+          echo "  📦 ZIP: ${ZIP_NAME} ($(du -sh ${ZIP_NAME} | cut -f1))"
+          echo "  🔒 Checksum: ${ZIP_NAME}.sha256"
+          echo "  🔗 https://github.com/ankitpaul6201/CP-VAULT/releases/tag/${VERSION}"
+          echo "═══════════════════════════════════════"

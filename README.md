@@ -6,19 +6,19 @@
 
 ### Automatically sync your accepted competitive programming solutions to GitHub — beautifully.
 
-[![Version](https://img.shields.io/badge/version-1.0.0-6366f1?style=for-the-badge&logo=semver)](https://github.com/ankitpaul6201/CP-VAULT/releases)
+[![Latest Release](https://img.shields.io/github/v/release/ankitpaul6201/CP-VAULT?style=for-the-badge&color=6366f1&label=Latest)](https://github.com/ankitpaul6201/CP-VAULT/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/ankitpaul6201/CP-VAULT/total?style=for-the-badge&color=22c55e&label=Downloads)](https://github.com/ankitpaul6201/CP-VAULT/releases)
 [![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)](./LICENSE)
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://github.com/ankitpaul6201/CP-VAULT)
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-f59e0b?style=for-the-badge)](./extension/manifest.json)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-18-61dafb?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![CI](https://img.shields.io/github/actions/workflow/status/ankitpaul6201/CP-VAULT/build.yml?style=for-the-badge&label=Build&logo=github)](https://github.com/ankitpaul6201/CP-VAULT/actions)
 [![Stars](https://img.shields.io/github/stars/ankitpaul6201/CP-VAULT?style=for-the-badge&color=fbbf24)](https://github.com/ankitpaul6201/CP-VAULT/stargazers)
-[![Forks](https://img.shields.io/github/forks/ankitpaul6201/CP-VAULT?style=for-the-badge&color=a78bfa)](https://github.com/ankitpaul6201/CP-VAULT/network/members)
 [![Issues](https://img.shields.io/github/issues/ankitpaul6201/CP-VAULT?style=for-the-badge&color=f87171)](https://github.com/ankitpaul6201/CP-VAULT/issues)
 
 <br />
 
-**[✨ Features](#-features) · [📦 Installation](#-installation) · [🚀 Usage](#-usage) · [🗺️ Roadmap](#%EF%B8%8F-roadmap) · [🤝 Contributing](#-contributing)**
+**[⬇️ Download](#-downloads) · [✨ Features](#-features) · [📦 Installation](#-installation) · [🚀 Usage](#-usage) · [🗺️ Roadmap](#%EF%B8%8F-roadmap) · [🤝 Contributing](#-contributing)**
 
 </div>
 
@@ -557,6 +557,42 @@ If CP Vault saves you time and helps you build a great portfolio, consider suppo
 > **UPI**: `ankitpaul@ptyes`
 
 </div>
+
+---
+
+## ⬇️ Downloads
+
+<div align="center">
+
+### Stable Release
+
+| Asset | Description |
+|---|---|
+| 📦 **[CP-Vault-v1.0.0.zip](https://github.com/ankitpaul6201/CP-VAULT/releases/latest/download/CP-Vault-v1.0.0.zip)** | Extension ZIP — load directly as unpacked |
+| 🔒 **[SHA256 Checksum](https://github.com/ankitpaul6201/CP-VAULT/releases/latest/download/CP-Vault-v1.0.0.zip.sha256)** | Verify download integrity |
+| 📋 **[Release Notes](https://github.com/ankitpaul6201/CP-VAULT/releases/latest)** | Full changelog for v1.0.0 |
+| 💾 **[Source Code](https://github.com/ankitpaul6201/CP-VAULT/archive/refs/tags/v1.0.0.zip)** | Complete source archive |
+
+**[→ View All Releases](https://github.com/ankitpaul6201/CP-VAULT/releases)**
+
+</div>
+
+### Release Types
+
+| Type | Tag Format | Description |
+|---|---|---|
+| 🟢 **Stable** | `v1.0.0` | Production-ready, recommended for all users |
+| 🟡 **Release Candidate** | `v1.0.0-rc1` | Final testing before stable |
+| 🟠 **Beta** | `v1.0.0-beta.1` | Feature-complete, may have minor issues |
+| 🔴 **Alpha** | `v1.0.0-alpha.1` | Early preview, not for production use |
+
+### Verify Your Download
+
+```bash
+# Download and verify checksum
+sha256sum -c CP-Vault-v1.0.0.zip.sha256
+# Expected: CP-Vault-v1.0.0.zip: OK
+```
 
 ---
 

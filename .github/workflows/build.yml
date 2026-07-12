@@ -1,0 +1,95 @@
+name: Build
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-extension:
+    name: 🔨 Build Extension
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: extension/package-lock.json
+
+      - name: Install Dependencies
+        run: cd extension && npm ci
+
+      - name: Build (Production)
+        run: cd extension && npm run build
+
+      - name: Validate Build Output
+        run: |
+          echo "Validating build artifacts..."
+          REQUIRED=(
+            "extension/dist/manifest.json"
+            "extension/dist/background.js"
+            "extension/dist/content.js"
+            "extension/dist/interceptor.js"
+          )
+          for file in "${REQUIRED[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing: $file"
+              exit 1
+            fi
+            SIZE=$(du -sh "$file" | cut -f1)
+            echo "✅ $file ($SIZE)"
+          done
+
+      - name: Print Build Summary
+        run: |
+          echo "Build output:"
+          find extension/dist -type f | sort
+          echo ""
+          echo "Total size: $(du -sh extension/dist | cut -f1)"
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-dist-${{ github.sha }}
+          path: extension/dist/
+          retention-days: 5
+
+  build-backend:
+    name: 🖥️ Validate Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Dependencies
+        run: cd backend && npm ci
+
+      - name: Syntax Check
+        run: cd backend && node --check server.js
+
+      - name: Verify Environment Template
+        run: |
+          if [ ! -f "backend/.env.example" ]; then
+            echo "❌ .env.example missing!"
+            exit 1
+          fi
+          if [ -f "backend/.env" ]; then
+            echo "⚠️  WARNING: .env file is present — ensure it is gitignored!"
+            git check-ignore -v backend/.env && echo "✅ .env is gitignored" || (echo "❌ .env is NOT gitignored!" && exit 1)
+          fi
+          echo "✅ Backend environment template OK"
