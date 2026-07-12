@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./cp-vault-logo.svg" alt="CP Vault Logo" width="120" height="120" />
+<img src="./logo.png" alt="CP Vault Logo" width="140" height="140" />
 
 # CP Vault
 

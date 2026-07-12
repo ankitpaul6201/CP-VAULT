@@ -41,7 +41,7 @@
       } else if (resource && typeof resource === 'object' && 'url' in resource) {
         url = (resource as Request).url;
       } else if (resource) {
-        url = resource.toString();
+        url = String(resource);
       }
 
       if (url && isTargetUrl(url)) {

@@ -1,14 +1,10 @@
 import { useEffect, useState } from 'react';
-import gsap from 'gsap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../shared/store';
-import { Logo } from '../shared/components/Logo';
 import { 
-  Linkedin, 
   CheckCircle2, 
   RefreshCw, 
   ExternalLink,
-  Clock,
   Layout,
   Shield,
   Plus,
@@ -155,6 +151,7 @@ export default function App() {
       }, 4000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [toast]);
 
   // Sync state between path changes & popstate events
@@ -334,14 +331,7 @@ export default function App() {
     : activeLogoTheme === 'sunset'
     ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-xl shadow-orange-500/20'
     : 'bg-white text-[#030e21] hover:bg-sky-100 shadow-xl shadow-white/5';
-    
-  const secondaryButtonClass = useLightTheme 
-    ? 'border-[#2d4d30] text-[#2d4d30] hover:bg-[#2d4d30]/5' 
-    : activeLogoTheme === 'sunrise'
-    ? 'border-rose-500/30 text-rose-300 hover:bg-rose-500/5'
-    : activeLogoTheme === 'sunset'
-    ? 'border-orange-500/30 text-orange-300 hover:bg-orange-500/5'
-    : 'border-slate-400 text-white hover:bg-white/5';
+
 
   const navToggleClass = useLightTheme
     ? 'bg-white/70 border-[#ccd4c3] text-[#2d4d30] hover:text-[#1d331f]'
