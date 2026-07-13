@@ -59,12 +59,12 @@ export const CodeChefAdapter = {
   _checkForAcceptedVerdict() {
     // CodeChef new UI: result shown in a div with class containing "AC" or "Accepted"
     const resultBanner = document.querySelector(
-      '[class*="ac-status"], [class*="accepted"], .result-AC, .verdict-AC, ._AC__'
+      '[class*="ac-status"], [class*="accepted"], .result-AC, .verdict-AC, ._AC__, [class*="compile-submit-result"], [class*="status"]'
     );
 
     if (resultBanner) {
       const text = resultBanner.textContent?.trim().toLowerCase() || '';
-      if (text.includes('accepted') || text.includes(' ac')) {
+      if (text.includes('accepted') || text.includes(' ac') || text === 'ac' || text.includes('correct')) {
         this._extractFromDOM();
         return;
       }
