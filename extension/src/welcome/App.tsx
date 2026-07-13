@@ -117,6 +117,7 @@ export default function App() {
     repositories,
     createRepository,
     updateSettings,
+    rebuildHistoryFromGitHub,
     isLoading,
     logout,
     error 
@@ -938,6 +939,22 @@ export default function App() {
                                 </div>
                                 
                                 <div className="flex flex-col gap-2 w-full pt-2">
+                                  <button
+                                    onClick={async () => {
+                                      showToast('Rebuilding stats... This may take a moment.', 'info');
+                                      const success = await rebuildHistoryFromGitHub();
+                                      if (success) {
+                                        showToast('Successfully rebuilt statistics from GitHub!', 'success');
+                                      } else {
+                                        showToast('Failed to rebuild statistics', 'error');
+                                      }
+                                    }}
+                                    disabled={isLoading}
+                                    className={`flex items-center justify-center gap-2 px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider rounded-lg border transition ${primaryBtnClass}`}
+                                  >
+                                    <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                                    Rebuild Stats from Repo
+                                  </button>
                                   <a
                                     href={`https://github.com/${settings.repoOwner}/${settings.repoName}`}
                                     target="_blank"

@@ -22,6 +22,7 @@ interface AppState {
   createRepository: (name: string, isPrivate: boolean) => Promise<boolean>;
   clearQueue: () => Promise<void>;
   syncSubmissionManually: (meta: any) => Promise<boolean>;
+  rebuildHistoryFromGitHub: () => Promise<boolean>;
 }
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -223,6 +224,32 @@ export const useAppStore = create<AppState>((set, get) => {
           }
         });
       });
+    },
+
+    rebuildHistoryFromGitHub: async () => {
+      const state = get();
+      if (!state.settings?.githubToken || !state.settings?.repoOwner || !state.settings?.repoName) return false;
+      
+      set({ isLoading: true, error: null });
+      try {
+        const { logs } = await GitHubService.rebuildHistoryFromTree(
+          state.settings.githubToken,
+          state.settings.repoOwner,
+          state.settings.repoName
+        );
+
+        const newHistory = {
+          logs,
+          streak: state.history?.streak || { currentStreak: 0, lastSolvedDate: null }
+        };
+
+        await StorageService.updateHistory(newHistory);
+        set({ history: newHistory, isLoading: false });
+        return true;
+      } catch(err) {
+        set({ error: err instanceof Error ? err.message : 'Failed to rebuild history', isLoading: false });
+        return false;
+      }
     }
   };
 });

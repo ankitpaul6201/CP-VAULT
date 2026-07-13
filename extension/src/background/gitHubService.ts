@@ -207,5 +207,93 @@ export const GitHubService = {
     }
 
     return newCommitSha;
+  },
+
+  /**
+   * Rebuilds the SyncHistory by fetching the Git tree and parsing the file paths.
+   */
+  async rebuildHistoryFromTree(token: string, owner: string, repo: string, branch = 'main'): Promise<{ logs: any[] }> {
+    const headers = await this.getHeaders(token);
+    
+    // First resolve the branch or default to master
+    let refBranch = branch;
+    try {
+      const refResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${branch}`, { headers });
+      if (!refResponse.ok) {
+        refBranch = 'master';
+      }
+    } catch(e) {
+      refBranch = 'master';
+    }
+
+    // Fetch the recursive tree
+    const treeResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${refBranch}?recursive=1`, { headers });
+    if (!treeResponse.ok) {
+      throw new Error(`Failed to fetch repository tree: ${treeResponse.statusText}`);
+    }
+
+    const treeData = await treeResponse.json();
+    if (!treeData.tree || !Array.isArray(treeData.tree)) {
+      return { logs: [] };
+    }
+
+    const logs: any[] = [];
+    const now = new Date().toISOString();
+
+    for (const item of treeData.tree) {
+      // Look for solution files
+      if (item.type === 'blob' && item.path.includes('solution.')) {
+        // e.g. "LeetCode/Easy/0001 - Two Sum/solution.py"
+        // e.g. "Codeforces/118A - String Task/solution.cpp"
+        const parts = item.path.split('/');
+        if (parts.length >= 3) {
+          const platform = parts[0];
+          let difficulty = 'Unknown';
+          let folderName = '';
+
+          if (parts.length === 4) {
+            // Platform / Difficulty / Folder / solution.ext
+            difficulty = parts[1];
+            folderName = parts[2];
+          } else if (parts.length === 3) {
+            // Platform / Folder / solution.ext
+            folderName = parts[1];
+          }
+
+          // Parse folderName "118A - String Task"
+          let problemId = folderName;
+          let problemName = folderName;
+          const separatorIdx = folderName.indexOf(' - ');
+          if (separatorIdx !== -1) {
+            problemId = folderName.substring(0, separatorIdx);
+            problemName = folderName.substring(separatorIdx + 3);
+          }
+
+          // Determine language from extension
+          const ext = item.path.split('.').pop()?.toLowerCase();
+          let language = 'Unknown';
+          if (ext === 'cpp' || ext === 'cc') language = 'C++';
+          else if (ext === 'py') language = 'Python';
+          else if (ext === 'js') language = 'JavaScript';
+          else if (ext === 'ts') language = 'TypeScript';
+          else if (ext === 'java') language = 'Java';
+          else if (ext === 'cs') language = 'C#';
+          else if (ext === 'go') language = 'Go';
+
+          logs.push({
+            id: `${platform}-${problemId}-rebuild`,
+            platform,
+            problemId,
+            problemName,
+            difficulty,
+            language,
+            syncedAt: now,
+            codeHash: item.sha // use git blob sha as hash
+          });
+        }
+      }
+    }
+
+    return { logs };
   }
 };
