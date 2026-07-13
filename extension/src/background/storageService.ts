@@ -19,8 +19,8 @@ const DEFAULT_SETTINGS: SyncSettings = {
   folderNamingStyle: 'number-name',
   retryFailed: true,
   darkMode: true,
-  clientId: 'YOUR_GITHUB_CLIENT_ID',
-  clientSecret: 'YOUR_GITHUB_CLIENT_SECRET',
+  clientId: 'Ov23lixUODKMEAN667yX',
+  clientSecret: '',
   proxyUrl: 'http://localhost:3000',
 };
 

@@ -105,7 +105,7 @@ const BookmarkIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const DEFAULT_CLIENT_ID = 'YOUR_GITHUB_CLIENT_ID';
+const DEFAULT_CLIENT_ID = 'Ov23lixUODKMEAN667yX';
 const DEFAULT_PROXY_URL = 'http://localhost:3000';
 
 export default function App() {
