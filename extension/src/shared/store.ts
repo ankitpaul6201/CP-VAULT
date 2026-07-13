@@ -244,6 +244,18 @@ export const useAppStore = create<AppState>((set, get) => {
         };
 
         await StorageService.updateHistory(newHistory);
+        
+        // Auto-generate and push the new root README
+        const { READMEGenerator } = await import('./utils/readme');
+        const rootReadmeContent = READMEGenerator.generateRootREADME(newHistory, state.settings.repoName);
+        await GitHubService.commitFiles(
+          state.settings.githubToken,
+          state.settings.repoOwner,
+          state.settings.repoName,
+          [{ path: 'README.md', content: rootReadmeContent }],
+          'Rebuild statistics and README from repository history'
+        );
+
         set({ history: newHistory, isLoading: false });
         return true;
       } catch(err) {
