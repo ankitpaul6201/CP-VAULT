@@ -40,7 +40,7 @@ ${meta.code}
 ${meta.complexity ? `### Complexity\n${meta.complexity}\n` : ''}
 
 ---
-*Auto-generated using [CP Vault](https://github.com/ankit/CP-Vault).*
+*Auto-generated using [CP Vault](https://github.com/ankitpaul6201/CP-VAULT).*
 `;
   },
 

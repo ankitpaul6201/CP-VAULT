@@ -6,6 +6,8 @@ import { Logger } from '../shared/utils/logger';
 import { SubmissionMetadata, SyncLog, QueueItem } from '../shared/types';
 import { RetryQueue } from './retryQueue';
 
+let syncQueuePromise: Promise<void> = Promise.resolve();
+
 export const SyncEngine = {
   initialize() {
     Logger.info('Sync Engine Initialized.');
@@ -16,9 +18,19 @@ export const SyncEngine = {
   },
 
   /**
-   * Orchestrates the syncing of an accepted solution.
+   * Enqueues the syncing of an accepted solution to prevent GitHub API conflicts.
    */
   async processSync(meta: SubmissionMetadata, isAutoSync = true): Promise<void> {
+    syncQueuePromise = syncQueuePromise.then(() => this._doProcessSync(meta, isAutoSync)).catch(err => {
+      Logger.error('Sync queue caught error:', err);
+    });
+    return syncQueuePromise;
+  },
+
+  /**
+   * Orchestrates the syncing of an accepted solution.
+   */
+  async _doProcessSync(meta: SubmissionMetadata, isAutoSync = true): Promise<void> {
     const settings = await StorageService.getSettings();
 
     // 1. Validation

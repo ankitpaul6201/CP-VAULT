@@ -60,6 +60,7 @@
     return (
       url.includes('/graphql') || // LeetCode GraphQL
       url.includes('/api/submissions-detail/') || // CodeChef API
+      url.includes('/api/ide/submit') || // CodeChef API (new)
       url.includes('/rest/contests/') || // HackerRank submissions
       url.includes('/submissions')
     );

@@ -13,6 +13,7 @@ import { Logger } from '../../shared/utils/logger';
 
 let isObserving = false;
 let lastProcessedSubmissionId = '';
+let lastProcessedTime = 0;
 
 export const CodeChefAdapter = {
   parse(url: string, responseText: string) {
@@ -58,11 +59,11 @@ export const CodeChefAdapter = {
 
   _checkForAcceptedVerdict() {
     // CodeChef new UI: result shown in a div with class containing "AC" or "Accepted"
-    const resultBanner = document.querySelector(
-      '[class*="ac-status"], [class*="accepted"], .result-AC, .verdict-AC, ._AC__, [class*="compile-submit-result"], [class*="status"]'
+    const resultBanners = document.querySelectorAll(
+      '[class*="ac-status"], [class*="accepted"], .result-AC, .verdict-AC, ._AC__, [class*="compile-submit-result"], [class*="status"], [class*="verdict"], [class*="result"]'
     );
 
-    if (resultBanner) {
+    for (const resultBanner of Array.from(resultBanners)) {
       const text = resultBanner.textContent?.trim().toLowerCase() || '';
       if (text.includes('accepted') || text.includes(' ac') || text === 'ac' || text.includes('correct')) {
         this._extractFromDOM();
@@ -93,9 +94,11 @@ export const CodeChefAdapter = {
       const urlMatch = window.location.pathname.match(/\/problems\/([A-Z0-9_]+)/i);
       const problemId = urlMatch ? urlMatch[1].toUpperCase() : 'UNKNOWN';
 
-      // Avoid duplicate sends
-      if (lastProcessedSubmissionId === `dom-${problemId}-${new Date().toISOString().split('T')[0]}`) return;
-      lastProcessedSubmissionId = `dom-${problemId}-${new Date().toISOString().split('T')[0]}`;
+      // Avoid duplicate sends (debounce within 10 seconds)
+      const now = Date.now();
+      if (lastProcessedSubmissionId === `dom-${problemId}` && (now - lastProcessedTime < 10000)) return;
+      lastProcessedSubmissionId = `dom-${problemId}`;
+      lastProcessedTime = now;
 
       // Try to get language from the language selector button
       const langBtn = document.querySelector(
