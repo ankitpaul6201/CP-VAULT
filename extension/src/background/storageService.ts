@@ -20,7 +20,7 @@ const DEFAULT_SETTINGS: SyncSettings = {
   retryFailed: true,
   darkMode: true,
   clientId: 'Ov23lixUODKMEAN667yX',
-  clientSecret: 'd29f84928809e7228089a0e0eaf8e8392ba63154',
+  clientSecret: '----',
   proxyUrl: 'http://localhost:3000',
 };
 
