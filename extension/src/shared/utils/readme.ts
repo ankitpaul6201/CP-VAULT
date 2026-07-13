@@ -130,7 +130,7 @@ ${latestSolvedRows || '| - | - | No solved problems yet. | - | - | - |'}
 
 ---
 
-*This repository is automatically maintained and updated by [CP Vault](https://github.com/ankit/CP-Vault).*
+*This repository is automatically maintained and updated by [CP Vault](https://github.com/ankitpaul6201/CP-VAULT).*
 `;
   },
 
