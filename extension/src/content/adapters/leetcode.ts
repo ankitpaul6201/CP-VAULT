@@ -62,7 +62,13 @@ function startObserver() {
     }
   });
 
-  submitBtnObserver.observe(document.body, { childList: true, subtree: true });
+  const observeTarget = document.body || document.documentElement;
+  if (!observeTarget) {
+    // Body not ready yet — defer until DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => { isObserving = false; startObserver(); }, { once: true });
+    return;
+  }
+  submitBtnObserver.observe(observeTarget, { childList: true, subtree: true });
 }
 
 async function handleSubmitClick() {
