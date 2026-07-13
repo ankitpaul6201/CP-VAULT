@@ -196,6 +196,7 @@ export default function App() {
       const success = await loginOAuth(cid, csecret, purl);
       if (success) {
         setAuthSuccess(true);
+        showToast('Successfully Connected! Taking you to settings...', 'success');
         setTimeout(() => {
           handleNavigate('settings');
         }, 1800);
@@ -697,13 +698,7 @@ export default function App() {
                 </div>
               )}
 
-              {authSuccess && (
-                <div className="max-w-md p-5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex flex-col items-center gap-2.5">
-                  <CheckCircle2 className="h-8 w-8 text-emerald-400 animate-bounce" />
-                  <h4 className="text-sm font-bold text-emerald-300">Successfully Connected!</h4>
-                  <p className="text-xs text-emerald-400/80">Taking you to settings to select repository...</p>
-                </div>
-              )}
+
 
               <div className="space-y-4">
                 <h2 className={`text-6xl md:text-8xl font-black ${textPrimary} tracking-tight leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.35)] transition-colors duration-1000`}>
