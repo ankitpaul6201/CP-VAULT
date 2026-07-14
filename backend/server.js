@@ -28,8 +28,15 @@ app.get('/api/auth/github/login', (req, res) => {
 
   // Base64 encode the extension redirect URI to store in state
   const state = Buffer.from(extRedirect.toString()).toString('base64');
-  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=repo,user&state=${state}`;
+const callbackUrl =
+'https://cp-vault-production.up.railway.app/api/auth/github/callback';
 
+const githubAuthUrl =
+`https://github.com/login/oauth/authorize` +
+`?client_id=${encodeURIComponent(clientId)}` +
+`&redirect_uri=${encodeURIComponent(callbackUrl)}` +
+`&scope=${encodeURIComponent('repo user')}` +
+`&state=${encodeURIComponent(state)}`;
   res.redirect(githubAuthUrl);
 });
 
