@@ -50,9 +50,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     oauthResponseCallback = sendResponse;
 
     // Direct GitHub authorize URL in serverless mode, proxy login URL otherwise
-    const authUrl = isServerless 
-      ? `https://github.com/login/oauth/authorize?client_id=${clientId}&scope=repo,user&redirect_uri=${encodeURIComponent(redirectUri)}`
-      : `${proxyUrl}/api/auth/github/login?ext_redirect=${encodeURIComponent(redirectUri)}&client_id=${clientId}`;
+const extensionRedirect = chrome.identity.getRedirectURL();
+
+const authUrl =
+`https://cp-vault-production.up.railway.app/api/auth/github/login` +
+`?client_id=${encodeURIComponent(CLIENT_ID)}` +
+`&ext_redirect=${encodeURIComponent(extensionRedirect)}`;
 
     Logger.info(`Launching Tab-Based Auth Flow (isServerless=${isServerless})...`, authUrl);
     
