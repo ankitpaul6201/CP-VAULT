@@ -90,6 +90,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date() });
 });
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.send('CP Vault OAuth Server is running!');
+});
+
 app.listen(PORT, () => {
   console.log(`CP Vault OAuth Proxy Server running on port ${PORT}`);
 });
