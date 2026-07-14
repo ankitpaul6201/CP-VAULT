@@ -60,13 +60,55 @@ const authUrl =
     Logger.info(`Launching Tab-Based Auth Flow (isServerless=${isServerless})...`, authUrl);
     
     // Set a pipe flag in storage so our content script knows to intercept the code on redirect
-    chrome.storage.local.set({ pipe_cp_vault: true }, () => {
-      chrome.tabs.create({ url: authUrl, active: true }, (tab) => {
-        if (tab?.id) {
-          oauthTabId = tab.id;
-        }
+   chrome.identity.launchWebAuthFlow(
+  {
+    url: authUrl,
+    interactive: true,
+  },
+  async (redirectUrl) => {
+    if (chrome.runtime.lastError) {
+      sendResponse({
+        success: false,
+        error: chrome.runtime.lastError.message,
       });
+      return;
+    }
+
+    if (!redirectUrl) {
+      sendResponse({
+        success: false,
+        error: "No redirect URL received",
+      });
+      return;
+    }
+
+    const url = new URL(redirectUrl);
+
+    const token = url.searchParams.get("access_token");
+
+    if (!token) {
+      sendResponse({
+        success: false,
+        error: "Access token missing",
+      });
+      return;
+    }
+
+    const user = await GitHubService.getUser(token);
+
+    await StorageService.updateSettings({
+      githubToken: token,
+      authMethod: "oauth",
     });
+
+    await StorageService.saveGitHubUser(user);
+
+    sendResponse({
+      success: true,
+      user,
+    });
+  }
+);
 
     return true; // Keep channel open for async callback
   }
