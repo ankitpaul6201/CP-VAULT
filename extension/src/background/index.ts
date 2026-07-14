@@ -54,7 +54,7 @@ const extensionRedirect = chrome.identity.getRedirectURL();
 
 const authUrl =
 `https://cp-vault-production.up.railway.app/api/auth/github/login` +
-`?client_id=${encodeURIComponent(CLIENT_ID)}` +
+`?client_id=${encodeURIComponent(clientId)}` +
 `&ext_redirect=${encodeURIComponent(extensionRedirect)}`;
 
     Logger.info(`Launching Tab-Based Auth Flow (isServerless=${isServerless})...`, authUrl);
