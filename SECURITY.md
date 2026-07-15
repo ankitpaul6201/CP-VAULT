@@ -4,7 +4,7 @@ We take the security of CP Vault seriously. If you believe you have found a secu
 
 ## Reporting a Vulnerability
 - **Do NOT open a public GitHub issue** for security vulnerabilities.
-- Please email security reports to **security@cpvault.dev** (or your designated security contact email).
+- Please email security reports to **ankitpaul9341@gmail.com** (or your designated security contact email).
 - Include the following details in your report:
   - Description of the vulnerability and its potential impact.
   - Step-by-step instructions (or a proof-of-concept script) to reproduce the issue.
