@@ -156,6 +156,13 @@ export default function App() {
     return undefined;
   }, [toast]);
 
+  // Toast trigger on store error
+  useEffect(() => {
+    if (error) {
+      showToast(error, 'error');
+    }
+  }, [error]);
+
   // Sync state between path changes & popstate events
   useEffect(() => {
     initialize();
@@ -692,11 +699,7 @@ export default function App() {
 
             {/* Hero Welcome Container */}
             <main className="relative z-20 max-w-5xl mx-auto w-full px-8 py-16 flex-1 flex flex-col items-center justify-start pt-44 text-center space-y-8">
-              {error && (
-                <div className="max-w-md p-3.5 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400 font-medium leading-relaxed">
-                  {error}
-                </div>
-              )}
+
 
 
 
@@ -863,15 +866,7 @@ export default function App() {
 
               {/* Content Pane */}
               <main className="glass rounded-2xl p-6 relative z-20 h-full flex flex-col min-h-0 overflow-hidden">
-                {error && (
-                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
-                    <Shield className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-bold text-red-300">Authentication / Configuration Error</h4>
-                      <p className="text-xs text-red-400 mt-1">{error}</p>
-                    </div>
-                  </div>
-                )}
+
 
                 {/* Repository Target Tab */}
                 {activeTab === 'repo' && (
