@@ -1,5 +1,5 @@
 import { GitHubUser, GitHubRepo } from '../shared/types';
-import { FileCommit } from '../background/gitHubService';
+import { FileCommit } from '../background/github';
 
 export const mockGitHubUser: GitHubUser = {
   login: 'mock-user',
