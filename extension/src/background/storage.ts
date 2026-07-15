@@ -1,6 +1,6 @@
 import { SyncSettings, SyncHistory, QueueItem, GitHubUser } from '../shared/types';
 
-const DEFAULT_SETTINGS: SyncSettings = {
+const DEFAULT_SETTINGS: Omit<SyncSettings, 'clientSecret'> = {
   githubToken: null,
   authMethod: null,
   repoOwner: null,
@@ -20,8 +20,7 @@ const DEFAULT_SETTINGS: SyncSettings = {
   retryFailed: true,
   darkMode: true,
   clientId: 'Ov23lixUODKMEAN667yX',
-  clientSecret: 'd29f84928809e7228089a0e0eaf8e8392ba63154',
-  proxyUrl: 'http://localhost:3000',
+  proxyUrl: 'https://cp-vault-production.up.railway.app',
 };
 
 const DEFAULT_HISTORY: SyncHistory = {
@@ -36,7 +35,7 @@ export const StorageService = {
   async getSettings(): Promise<SyncSettings> {
     return new Promise((resolve) => {
       chrome.storage.local.get({ settings: DEFAULT_SETTINGS }, (result) => {
-        resolve({ ...DEFAULT_SETTINGS, ...result.settings });
+        resolve({ ...DEFAULT_SETTINGS, ...result.settings } as SyncSettings);
       });
     });
   },
@@ -44,6 +43,10 @@ export const StorageService = {
   async updateSettings(updates: Partial<SyncSettings>): Promise<SyncSettings> {
     const current = await this.getSettings();
     const updated = { ...current, ...updates };
+    // clientSecret should not be present
+    if ('clientSecret' in updated) {
+      delete (updated as any).clientSecret;
+    }
     return new Promise((resolve) => {
       chrome.storage.local.set({ settings: updated }, () => {
         resolve(updated);

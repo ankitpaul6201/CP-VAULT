@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { SyncSettings, SyncHistory, QueueItem, GitHubUser, GitHubRepo } from './types';
-import { StorageService } from '../background/storageService';
-import { GitHubService } from '../background/gitHubService';
+import { StorageService } from '../background/storage';
+import { GitHubService } from '../background/github';
+import { Logger } from './utils/logger';
 
 interface AppState {
   settings: SyncSettings | null;
@@ -15,8 +16,7 @@ interface AppState {
   // Actions
   initialize: () => Promise<void>;
   updateSettings: (updates: Partial<SyncSettings>) => Promise<void>;
-  loginPAT: (token: string) => Promise<boolean>;
-  loginOAuth: (clientId: string, clientSecret: string | null | undefined, proxyUrl: string) => Promise<boolean>;
+  loginOAuth: (clientId: string, proxyUrl: string) => Promise<boolean>;
   logout: () => Promise<void>;
   fetchRepositories: () => Promise<void>;
   createRepository: (name: string, isPrivate: boolean) => Promise<boolean>;
@@ -92,27 +92,10 @@ export const useAppStore = create<AppState>((set, get) => {
       }
     },
 
-    loginPAT: async (token) => {
+    loginOAuth: async (clientId, proxyUrl) => {
       set({ isLoading: true, error: null });
       return new Promise((resolve) => {
-        chrome.runtime.sendMessage({ action: 'LOGIN_PAT', token }, (response) => {
-          set({ isLoading: false });
-          if (response?.success) {
-            set({ githubUser: response.user });
-            get().fetchRepositories().catch(() => {});
-            resolve(true);
-          } else {
-            set({ error: response?.error || 'Failed to authenticate via PAT' });
-            resolve(false);
-          }
-        });
-      });
-    },
-
-    loginOAuth: async (clientId, clientSecret, proxyUrl) => {
-      set({ isLoading: true, error: null });
-      return new Promise((resolve) => {
-        chrome.runtime.sendMessage({ action: 'START_OAUTH', clientId, clientSecret, proxyUrl }, (response) => {
+        chrome.runtime.sendMessage({ action: 'START_OAUTH', clientId, proxyUrl }, (response) => {
           set({ isLoading: false });
           if (response?.success) {
             set({ githubUser: response.user });
@@ -141,20 +124,24 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     fetchRepositories: async () => {
-      const state = get();
-      if (!state.settings?.githubToken) return;
-
       set({ isLoading: true, error: null });
       try {
-        const repos = await GitHubService.listRepositories(state.settings.githubToken);
+        const settings = await StorageService.getSettings();
+        const token = settings.githubToken;
+        if (!token) {
+          set({ isLoading: false });
+          return;
+        }
+
+        const repos = await GitHubService.listRepositories(token);
         set({ repositories: repos, isLoading: false });
 
         // Auto-disconnect if target repo is deleted or renamed on GitHub
-        const { repoName, repoOwner, githubToken } = state.settings || {};
-        if (repoName && repoOwner && githubToken) {
+        const { repoName, repoOwner } = settings;
+        if (repoName && repoOwner) {
           const inList = repos.some(r => r.name.toLowerCase() === repoName.toLowerCase());
           if (!inList) {
-            const stillExists = await GitHubService.checkRepositoryExists(githubToken, repoOwner, repoName);
+            const stillExists = await GitHubService.checkRepositoryExists(token, repoOwner, repoName);
             if (!stillExists) {
               await get().updateSettings({
                 repoOwner: null,
@@ -163,8 +150,10 @@ export const useAppStore = create<AppState>((set, get) => {
             }
           }
         }
-      } catch (err) {
-        set({ error: 'Failed to fetch repositories from GitHub', isLoading: false });
+      } catch (err: any) {
+        Logger.error('Failed to fetch repositories:', err);
+        const errMsg = err.message || 'Failed to fetch repository.';
+        set({ error: errMsg, repositories: [], isLoading: false });
       }
     },
 

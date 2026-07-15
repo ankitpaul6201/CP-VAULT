@@ -38,7 +38,6 @@ export interface SyncSettings {
   retryFailed: boolean;
   darkMode: boolean;
   clientId: string | null;
-  clientSecret: string | null;
   proxyUrl: string | null;
 }
 

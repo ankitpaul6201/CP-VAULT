@@ -1,5 +1,5 @@
-import { StorageService } from './storageService';
-import { GitHubService } from './gitHubService';
+import { StorageService } from './storage';
+import { GitHubService } from './github';
 import { READMEGenerator } from '../shared/utils/readme';
 import { NotificationService } from './notification';
 import { Logger } from '../shared/utils/logger';

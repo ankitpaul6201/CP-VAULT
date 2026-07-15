@@ -84,7 +84,6 @@ export default function App() {
 
   const handleDirectOAuth = async () => {
     const cid = settings?.clientId || DEFAULT_CLIENT_ID;
-    const csecret = settings?.clientSecret || '';
     const purl = settings?.proxyUrl || DEFAULT_PROXY_URL;
     if (!cid || cid === 'your_client_id_here') {
       alert('OAuth Client ID is not configured. Please open the settings page to enter your Client ID.');
@@ -92,7 +91,7 @@ export default function App() {
       return;
     }
     try {
-      const success = await loginOAuth(cid, csecret, purl);
+      const success = await loginOAuth(cid, purl);
       if (!success) {
         const currentError = useAppStore.getState().error;
         alert(`Authentication failed: ${currentError || 'Unknown error. Check if your backend proxy server is running at ' + purl}`);

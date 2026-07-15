@@ -1,6 +1,69 @@
 import { GitHubUser, GitHubRepo } from '../shared/types';
 import { Logger } from '../shared/utils/logger';
 
+export class GitHubError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'GitHubError';
+  }
+}
+
+export class TokenExpiredError extends GitHubError {
+  constructor() {
+    super('Token expired.');
+    this.name = 'TokenExpiredError';
+  }
+}
+
+export class TokenInvalidError extends GitHubError {
+  constructor() {
+    super('GitHub authentication failed.');
+    this.name = 'TokenInvalidError';
+  }
+}
+
+export class MissingRepoScopeError extends GitHubError {
+  constructor() {
+    super('Repository access denied.');
+    this.name = 'MissingRepoScopeError';
+  }
+}
+
+export class RateLimitExceededError extends GitHubError {
+  constructor() {
+    super('GitHub API rate limit exceeded.');
+    this.name = 'RateLimitExceededError';
+  }
+}
+
+export class NetworkError extends GitHubError {
+  constructor() {
+    super('Network connection failed.');
+    this.name = 'NetworkError';
+  }
+}
+
+export class RepositoryNotFoundError extends GitHubError {
+  constructor() {
+    super('Repository not found.');
+    this.name = 'RepositoryNotFoundError';
+  }
+}
+
+export class RepositoryAccessDeniedError extends GitHubError {
+  constructor() {
+    super('Repository access denied.');
+    this.name = 'RepositoryAccessDeniedError';
+  }
+}
+
+export class RepositoryIsPrivateError extends GitHubError {
+  constructor() {
+    super('Repository is private.');
+    this.name = 'RepositoryIsPrivateError';
+  }
+}
+
 export interface FileCommit {
   path: string;
   content: string;
@@ -16,79 +79,127 @@ export const GitHubService = {
     };
   },
 
-  async getUser(token: string): Promise<GitHubUser> {
-    const headers = await this.getHeaders(token);
-    const response = await fetch('https://api.github.com/user', { headers });
-    if (!response.ok) {
-      throw new Error(`Failed to fetch user: ${response.statusText}`);
+  async handleResponse(response: Response): Promise<void> {
+    const scopesHeader = response.headers.get('X-OAuth-Scopes');
+    if (scopesHeader !== null) {
+      const scopes = scopesHeader.split(',').map(s => s.trim());
+      if (!scopes.includes('repo')) {
+        throw new MissingRepoScopeError();
+      }
     }
-    const data = await response.json();
-    return {
-      login: data.login,
-      avatarUrl: data.avatar_url,
-      htmlUrl: data.html_url,
-    };
+
+    if (response.status === 401) {
+      throw new TokenExpiredError();
+    }
+
+    if (response.status === 403 || response.status === 429) {
+      const rateLimitRemaining = response.headers.get('X-RateLimit-Remaining');
+      if (rateLimitRemaining === '0') {
+        throw new RateLimitExceededError();
+      }
+      throw new RepositoryAccessDeniedError();
+    }
+
+    if (response.status === 404) {
+      throw new RepositoryNotFoundError();
+    }
+
+    if (!response.ok) {
+      throw new GitHubError(`GitHub API error: ${response.statusText}`);
+    }
+  },
+
+  async getUser(token: string): Promise<GitHubUser> {
+    try {
+      const headers = await this.getHeaders(token);
+      const response = await fetch('https://api.github.com/user', { headers });
+      if (response.status === 401) {
+        throw new TokenExpiredError();
+      }
+      await this.handleResponse(response);
+      const data = await response.json();
+      return {
+        login: data.login,
+        avatarUrl: data.avatar_url,
+        htmlUrl: data.html_url,
+      };
+    } catch (err) {
+      if (err instanceof GitHubError) throw err;
+      throw new NetworkError();
+    }
   },
 
   async listRepositories(token: string): Promise<GitHubRepo[]> {
-    const headers = await this.getHeaders(token);
-    const response = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated', { headers });
-    if (!response.ok) {
-      throw new Error(`Failed to fetch repositories: ${response.statusText}`);
+    try {
+      const headers = await this.getHeaders(token);
+      const response = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated', { headers });
+      if (response.status === 401) {
+        throw new TokenExpiredError();
+      }
+      await this.handleResponse(response);
+      const data = await response.json();
+      return data.map((repo: any) => ({
+        name: repo.name,
+        fullName: repo.full_name,
+        private: repo.private,
+        htmlUrl: repo.html_url,
+      }));
+    } catch (err) {
+      if (err instanceof GitHubError) throw err;
+      throw new NetworkError();
     }
-    const data = await response.json();
-    return data.map((repo: any) => ({
-      name: repo.name,
-      fullName: repo.full_name,
-      private: repo.private,
-      htmlUrl: repo.html_url,
-    }));
   },
 
   async createRepository(token: string, name: string, isPrivate: boolean): Promise<GitHubRepo> {
-    const headers = await this.getHeaders(token);
-    const response = await fetch('https://api.github.com/user/repos', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        name,
-        private: isPrivate,
-        description: 'My Competitive Programming Solutions synced automatically using CP Vault',
-        auto_init: true,
-      }),
-    });
-    if (!response.ok) {
-      throw new Error(`Failed to create repository: ${response.statusText}`);
+    try {
+      const headers = await this.getHeaders(token);
+      const response = await fetch('https://api.github.com/user/repos', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          name,
+          private: isPrivate,
+          description: 'My Competitive Programming Solutions synced automatically using CP Vault',
+          auto_init: true,
+        }),
+      });
+      if (response.status === 401) {
+        throw new TokenExpiredError();
+      }
+      await this.handleResponse(response);
+      const data = await response.json();
+      return {
+        name: data.name,
+        fullName: data.full_name,
+        private: data.private,
+        htmlUrl: data.html_url,
+      };
+    } catch (err) {
+      if (err instanceof GitHubError) throw err;
+      throw new NetworkError();
     }
-    const data = await response.json();
-    return {
-      name: data.name,
-      fullName: data.full_name,
-      private: data.private,
-      htmlUrl: data.html_url,
-    };
   },
 
   async checkRepositoryExists(token: string, owner: string, repo: string): Promise<boolean> {
-    const headers = await this.getHeaders(token);
     try {
+      const headers = await this.getHeaders(token);
       const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers });
       if (response.status === 404) return false;
+      await this.handleResponse(response);
       return response.ok;
     } catch (err) {
-      Logger.warn(`Check repository exists caught error:`, err);
-      return true; // default to true on network errors to avoid false disconnects
+      if (err instanceof RepositoryNotFoundError) return false;
+      if (err instanceof GitHubError) throw err;
+      throw new NetworkError();
     }
   },
 
   async getFile(token: string, owner: string, repo: string, path: string, branch = 'main'): Promise<{ content: string; sha: string } | null> {
-    const headers = await this.getHeaders(token);
     try {
+      const headers = await this.getHeaders(token);
       const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`, { headers });
       if (response.status === 404) return null;
-      if (!response.ok) {
-        throw new Error(`Failed to get file: ${response.statusText}`);
-      }
+      await this.handleResponse(response);
       const data = await response.json();
       const content = atob(data.content.replace(/\s/g, ''));
       return { content, sha: data.sha };
@@ -98,10 +209,6 @@ export const GitHubService = {
     }
   },
 
-  /**
-   * Commit multiple files in a single, atomic operation using Git Database API.
-   * This prevents multiple commits for a single problem sync.
-   */
   async commitFiles(
     token: string,
     owner: string,
@@ -209,13 +316,9 @@ export const GitHubService = {
     return newCommitSha;
   },
 
-  /**
-   * Rebuilds the SyncHistory by fetching the Git tree and parsing the file paths.
-   */
   async rebuildHistoryFromTree(token: string, owner: string, repo: string, branch = 'main'): Promise<{ logs: any[] }> {
     const headers = await this.getHeaders(token);
     
-    // First resolve the branch or default to master
     let refBranch = branch;
     try {
       const refResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/ref/heads/${branch}`, { headers });
@@ -226,7 +329,6 @@ export const GitHubService = {
       refBranch = 'master';
     }
 
-    // Fetch the recursive tree
     const treeResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${refBranch}?recursive=1`, { headers });
     if (!treeResponse.ok) {
       throw new Error(`Failed to fetch repository tree: ${treeResponse.statusText}`);
@@ -241,10 +343,7 @@ export const GitHubService = {
     const now = new Date().toISOString();
 
     for (const item of treeData.tree) {
-      // Look for solution files
       if (item.type === 'blob' && item.path.includes('solution.')) {
-        // e.g. "LeetCode/Easy/0001 - Two Sum/solution.py"
-        // e.g. "Codeforces/118A - String Task/solution.cpp"
         const parts = item.path.split('/');
         if (parts.length >= 3) {
           const platform = parts[0];
@@ -252,15 +351,12 @@ export const GitHubService = {
           let folderName = '';
 
           if (parts.length === 4) {
-            // Platform / Difficulty / Folder / solution.ext
             difficulty = parts[1];
             folderName = parts[2];
           } else if (parts.length === 3) {
-            // Platform / Folder / solution.ext
             folderName = parts[1];
           }
 
-          // Parse folderName "118A - String Task"
           let problemId = folderName;
           let problemName = folderName;
           const separatorIdx = folderName.indexOf(' - ');
@@ -269,7 +365,6 @@ export const GitHubService = {
             problemName = folderName.substring(separatorIdx + 3);
           }
 
-          // Determine language from extension
           const ext = item.path.split('.').pop()?.toLowerCase();
           let language = 'Unknown';
           if (ext === 'cpp' || ext === 'cc') language = 'C++';
@@ -288,7 +383,7 @@ export const GitHubService = {
             difficulty,
             language,
             syncedAt: now,
-            codeHash: item.sha // use git blob sha as hash
+            codeHash: item.sha
           });
         }
       }

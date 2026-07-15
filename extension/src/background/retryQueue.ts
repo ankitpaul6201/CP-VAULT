@@ -1,4 +1,4 @@
-import { StorageService } from './storageService';
+import { StorageService } from './storage';
 import { QueueItem } from '../shared/types';
 import { Logger } from '../shared/utils/logger';
 import { NotificationService } from './notification';
