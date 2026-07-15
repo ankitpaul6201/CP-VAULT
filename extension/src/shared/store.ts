@@ -153,6 +153,9 @@ export const useAppStore = create<AppState>((set, get) => {
       } catch (err: any) {
         Logger.error('Failed to fetch repositories:', err);
         const errMsg = err.message || 'Failed to fetch repository.';
+        if (err.name === 'TokenExpiredError' || errMsg.includes('Token expired') || errMsg.includes('Authentication failed') || errMsg.includes('authentication failed')) {
+          await get().logout();
+        }
         set({ error: errMsg, repositories: [], isLoading: false });
       }
     },
