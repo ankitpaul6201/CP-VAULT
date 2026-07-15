@@ -62,8 +62,10 @@ app.get('/api/auth/github/login', (req, res) => {
   // Validate extRedirect format to prevent open redirects or injection attacks
   try {
     const redirectUrl = new URL(extRedirect.toString());
-    if (redirectUrl.protocol !== 'chrome-extension:') {
-      return res.status(400).send('Invalid redirect protocol. Must be chrome-extension://');
+    const isChromiumApp = redirectUrl.protocol === 'https:' && redirectUrl.hostname.endsWith('.chromiumapp.org');
+    const isChromeExtensionProto = redirectUrl.protocol === 'chrome-extension:';
+    if (!isChromiumApp && !isChromeExtensionProto) {
+      return res.status(400).send('Invalid redirect protocol. Must be a secure extension redirect.');
     }
   } catch (err) {
     return res.status(400).send('Invalid ext_redirect URI format');
