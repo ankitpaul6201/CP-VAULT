@@ -10,6 +10,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy for rate limiting behind reverse proxies (like Railway)
+app.set('trust proxy', 1);
+
 // Enable secure HTTP headers
 app.use(helmet());
 
