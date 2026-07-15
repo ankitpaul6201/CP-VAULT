@@ -5,7 +5,11 @@ import { Logger } from '../shared/utils/logger';
 export const AuthService = {
   async handleOAuth(clientId: string, proxyUrl: string): Promise<{ success: boolean; user?: any; error?: string }> {
     const extensionRedirect = chrome.identity.getRedirectURL();
-    const authUrl = `${proxyUrl}/api/auth/github/login?client_id=${encodeURIComponent(clientId)}&ext_redirect=${encodeURIComponent(extensionRedirect)}`;
+    let targetProxyUrl = proxyUrl || 'https://cp-vault-production.up.railway.app';
+    if (targetProxyUrl.startsWith('http://')) {
+      targetProxyUrl = 'https://cp-vault-production.up.railway.app';
+    }
+    const authUrl = `${targetProxyUrl}/api/auth/github/login?client_id=${encodeURIComponent(clientId)}&ext_redirect=${encodeURIComponent(extensionRedirect)}`;
 
     Logger.info('Launching launchWebAuthFlow...', authUrl);
 
