@@ -20,7 +20,7 @@ app.use(helmet());
 const allowedOriginRegex = /^chrome-extension:\/\/[a-z]{32}$/;
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1') || allowedOriginRegex.test(origin)) {
+    if (!origin || origin === 'null' || (typeof origin === 'string' && (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1') || allowedOriginRegex.test(origin)))) {
       callback(null, true);
     } else {
       callback(new Error('Blocked by CORS policy'));
